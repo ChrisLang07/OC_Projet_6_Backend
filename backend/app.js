@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const booksRoutes = require('./routes/books.js');
 const userRoutes = require('./routes/user');
-
+const path = require('path');
 
 
 // Connexion à MongoDB avec Mongoose (inutile d'utiliser MongoClient ici)
@@ -17,6 +17,8 @@ const app = express(); // Création d'une application Express
 
 app.use(express.json()); // Pour analyser les requêtes JSON
 
+app.use(express.urlencoded({ extended: true }));
+
 // Configuration des en-têtes CORS
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -24,6 +26,8 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     next();
 });
+
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 app.use('/api/books', booksRoutes);
 app.use('/api/auth', userRoutes);

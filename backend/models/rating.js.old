@@ -1,0 +1,11 @@
+const mongoose = require('mongoose');
+const uniqueValidator = (require('mongoose-unique-validator'));
+
+const ratingSchema = mongoose.Schema({
+    userId: { type: String, required: true, unique: true },
+    grade: { type: Number, required: true }
+  });
+
+ratingSchema.plugin(uniqueValidator);
+
+module.exports = mongoose.model('Rating', ratingSchema);
