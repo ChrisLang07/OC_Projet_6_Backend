@@ -6,7 +6,7 @@ const path = require('path');
 
 
 // Connexion à MongoDB avec Mongoose (inutile d'utiliser MongoClient ici)
-mongoose.connect('mongodb+srv://chrisOne:kkwhGMi7Ejo6KNOd@cluster0.xfu4p.mongodb.net/monvieuxgrimoire?retryWrites=true&w=majority&appName=Cluster0', {
+mongoose.connect('mongodb+srv://chrisOne:KCXKNN95Xf9wc8hK@cluster0.xfu4p.mongodb.net/monvieuxgrimoire?retryWrites=true&w=majority&appName=Cluster0', {
   connectTimeoutMS: 10000, // Timeout pour la connexion
   socketTimeoutMS: 45000   // Timeout pour les requêtes
 })

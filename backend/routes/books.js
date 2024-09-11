@@ -8,7 +8,7 @@ const multer = require('../middleware/multer-config');
 router.get('/bestrating', auth, bookCtrl.getTopRatedBooks);
 
 // Récupérer tous les livres
-router.get("/", auth, bookCtrl.getAllBooks);
+router.get("/", bookCtrl.getAllBooks);
 
 // Ajouter un nouveau livre
 router.post('/', auth, multer, bookCtrl.createBook);
@@ -17,7 +17,7 @@ router.post('/', auth, multer, bookCtrl.createBook);
 router.post('/:id/rating', auth, bookCtrl.rateBook);
 
 // Récupérer un livre spécifique (dynamique, après les routes statiques)
-router.get('/:id', auth, bookCtrl.getOneBook);
+router.get('/:id', bookCtrl.getOneBook);
 
 // Modifier un livre
 router.put('/:id', auth, multer, bookCtrl.updateBook);
