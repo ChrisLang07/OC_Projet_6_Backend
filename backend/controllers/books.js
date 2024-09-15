@@ -132,8 +132,6 @@ exports.deleteBook = (req, res, next) => {
 };
 
 exports.rateBook = (req, res, next) => {
-    console.log(req.body.rating);
-
     Book.findOne({ _id: req.params.id })
     .then(book => {
         const userId = req.auth.userId;
@@ -148,7 +146,9 @@ exports.rateBook = (req, res, next) => {
 
         const totalRatings = book.ratings.length;
         const totalGrades = book.ratings.reduce((sum, rating) => sum + rating.grade, 0);
-        const newAverageRating = totalGrades / totalRatings;
+        const rawAverageRating = totalGrades / totalRatings;
+
+        const newAverageRating = Math.round(rawAverageRating * 2) / 2;
 
         book.averageRating = newAverageRating;
 
