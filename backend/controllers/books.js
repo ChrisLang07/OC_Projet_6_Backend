@@ -19,15 +19,15 @@ exports.createBook = (req, res, next) => {
   delete bookObject._id;
   delete bookObject._userId;
 
-  // Chemins pour les fichiers temporaires et optimisés
-  const tempImagePath = req.file.path; // Chemin temporaire de l'image téléchargée
-  const optimizedFilename = `${uuidv4()}.webp`; // Nom de fichier unique pour l'image optimisée
-  const optimizedImagePath = path.join(__dirname, '../images', optimizedFilename); // Chemin pour l'image optimisée
+  
+  const tempImagePath = req.file.path; 
+  const optimizedFilename = `${uuidv4()}.webp`; 
+  const optimizedImagePath = path.join(__dirname, '../images', optimizedFilename);
 
-  // Optimiser l'image avec Sharp
+ 
   sharp(tempImagePath)
-    .resize({ width: 800 }) // Redimensionner à une largeur de 800px
-    .webp({ quality: 80 }) // Convertir en WebP avec une qualité de 80
+    .resize({ width: 800 }) 
+    .webp({ quality: 80 }) 
     .toFile(optimizedImagePath, (err, info) => {
       if (err) {
         console.error("Erreur lors de l'optimisation de l'image :", err);
@@ -37,19 +37,15 @@ exports.createBook = (req, res, next) => {
         });
       }
 
-      // Après l'optimisation, créer l'objet du livre
       const book = new Book({
         ...bookObject,
         userId: req.auth.userId,
         imageUrl: `${req.protocol}://${req.get("host")}/images/${optimizedFilename}`, // URL de l'image optimisée
       });
-
-      // Sauvegarder le livre dans la base de données
       book
         .save()
         .then(() => {
-          // Une fois l'enregistrement terminé, on peut supprimer l'image temporaire
-          fs.unlink(tempImagePath, (unlinkErr) => {
+         fs.unlink(tempImagePath, (unlinkErr) => {
             if (unlinkErr) {
               console.error("Erreur lors de la suppression de l'image temporaire :", unlinkErr);
             }
@@ -72,9 +68,9 @@ exports.getOneBook = (req, res, next) => {
 
 exports.updateBook = (req, res, next) => {
   const bookId = req.params.id;
+  const userId = req.userId;
 
-  // Vérifier si un nouveau fichier image est envoyé avec la requête
-  const newBookObject = req.file
+    const newBookObject = req.file
     ? {
         ...JSON.parse(req.body.book),
         imageUrl: `${req.protocol}://${req.get("host")}/images/${
@@ -83,20 +79,21 @@ exports.updateBook = (req, res, next) => {
       }
     : { ...req.body };
 
-  // Récupérer l'ancien livre pour supprimer l'image précédente si une nouvelle image est fournie
-  Book.findById(bookId)
+    Book.findById(bookId)
     .then((book) => {
       if (!book) {
         return res.status(404).json({ message: "Livre non trouvé !" });
       }
 
-      // Si une nouvelle image est téléchargée
+      if (book.userId.toString() !== userId) {
+        return res.status(403).json({ message: "Accès refusé. Vous n'êtes pas autorisé à modifier ce livre." });
+      }
+
       if (req.file) {
         const oldFilename = book.imageUrl.split("/images/")[1];
         const oldImagePath = path.join(__dirname, "../images", oldFilename);
 
-        // Supprimer l'ancienne image
-        fs.unlink(oldImagePath, (err) => {
+                fs.unlink(oldImagePath, (err) => {
           if (err) {
             console.log(
               "Erreur lors de la suppression de l'ancienne image:",
@@ -105,15 +102,13 @@ exports.updateBook = (req, res, next) => {
           }
         });
 
-        // Chemins pour les fichiers temporaires
         const tempImagePath = req.file.path;
         const tempOptimizedImagePath = path.join(
           __dirname,
           "../images",
           `${uuidv4()}.webp`
-        ); // Chemin pour l'image optimisée
+        );
 
-        // Optimiser la nouvelle image avec Sharp
         sharp(tempImagePath)
           .resize({ width: 800 }) // Redimensionner à une largeur de 800px
           .webp({ quality: 80 }) // Convertir en WebP avec une qualité de 80
@@ -127,7 +122,6 @@ exports.updateBook = (req, res, next) => {
                   details: err.message,
                 });
             }
-            // Déplacer l'image optimisée à son emplacement final
             const finalImagePath = path.join(
               __dirname,
               "../images",
@@ -146,8 +140,6 @@ exports.updateBook = (req, res, next) => {
                     details: err.message,
                   });
               }
-
-              // Mettre à jour le livre avec les nouvelles informations
               Book.updateOne({ _id: bookId }, { ...newBookObject, _id: bookId })
                 .then(() =>
                   res
@@ -158,7 +150,6 @@ exports.updateBook = (req, res, next) => {
             });
           });
       } else {
-        // Si aucune nouvelle image n'est fournie, juste mettre à jour le livre
         Book.updateOne({ _id: bookId }, { ...newBookObject, _id: bookId })
           .then(() =>
             res.status(200).json({ message: "Livre modifié avec succès !" })
@@ -178,11 +169,16 @@ exports.updateBook = (req, res, next) => {
 
 exports.deleteBook = (req, res, next) => {
   const bookId = req.params.id;
+  const userId = req.userId;
   
   Book.findById(bookId)
     .then((book) => {
       if (!book) {
         return res.status(404).json({ message: "Livre non trouvé !" });
+      }
+
+      if (book.userId.toString() !== userId) {
+        return res.status(403).json({ message: "Accès refusé. Vous n'êtes pas autorisé à supprimer ce livre." });
       }
 
       const filename = book.imageUrl.split("/images/")[1];
@@ -259,13 +255,13 @@ exports.rateBook = (req, res, next) => {
 };
 
 exports.getTopRatedBooks = (req, res, next) => {
-  Book.find() // Récupère tous les livres
-    .sort({ averageRating: -1 }) // Trie les livres par 'averageRating' en ordre décroissant (du plus grand au plus petit)
-    .limit(3) // Limite les résultats à 3 livres
+  Book.find()
+    .sort({ averageRating: -1 }) 
+    .limit(3) 
     .then((books) => {
-      res.status(200).json(books); // Retourne les 3 livres ayant la meilleure note moyenne
+      res.status(200).json(books); 
     })
     .catch((error) => {
-      res.status(400).json({ error }); // En cas d'erreur
+      res.status(400).json({ error }); 
     });
 };
